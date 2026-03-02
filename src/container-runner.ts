@@ -204,11 +204,7 @@ function buildVolumeMounts(
  * Secrets are never written to disk or mounted as files.
  */
 function readSecrets(): Record<string, string> {
-  return readEnvFile([
-    'CLAUDE_CODE_OAUTH_TOKEN',
-    'ANTHROPIC_API_KEY',
-    'ANTHROPIC_MODEL',
-  ]);
+  return readEnvFile(['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY']);
 }
 
 function buildContainerArgs(
@@ -219,6 +215,12 @@ function buildContainerArgs(
 
   // Pass host timezone so container's local time matches the user's
   args.push('-e', `TZ=${TIMEZONE}`);
+
+  // Pass model override as a non-secret env var (visible to Bash and logs)
+  const modelEnv = readEnvFile(['ANTHROPIC_MODEL']);
+  if (modelEnv.ANTHROPIC_MODEL) {
+    args.push('-e', `ANTHROPIC_MODEL=${modelEnv.ANTHROPIC_MODEL}`);
+  }
 
   // Run as host user so bind-mounted files are accessible.
   // Skip when running as root (uid 0), as the container's node user (uid 1000),
