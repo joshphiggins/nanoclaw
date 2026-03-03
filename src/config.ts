@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import os from 'os';
 import path from 'path';
 
@@ -6,7 +7,11 @@ import { readEnvFile } from './env.js';
 // Read config values from .env (falls back to process.env).
 // Secrets are NOT read here — they stay on disk and are loaded only
 // where needed (container-runner.ts) to avoid leaking to child processes.
-const envConfig = readEnvFile(['ASSISTANT_NAME', 'ASSISTANT_HAS_OWN_NUMBER']);
+const envConfig = readEnvFile([
+  'ASSISTANT_NAME',
+  'ASSISTANT_HAS_OWN_NUMBER',
+  'CONTAINER_RUNTIME',
+]);
 
 export const ASSISTANT_NAME =
   process.env.ASSISTANT_NAME || envConfig.ASSISTANT_NAME || 'Andy';
@@ -57,6 +62,26 @@ export const TRIGGER_PATTERN = new RegExp(
   `^@${escapeRegex(ASSISTANT_NAME)}\\b`,
   'i',
 );
+
+// Container runtime: 'apple-container' or 'docker'
+// Auto-detects if not set: prefers Apple Container on macOS, falls back to Docker
+export type ContainerRuntimeType = 'apple-container' | 'docker';
+
+function autoDetectRuntime(): ContainerRuntimeType {
+  try {
+    execSync('command -v container', { stdio: 'ignore' });
+    return 'apple-container';
+  } catch {
+    return 'docker';
+  }
+}
+
+const configuredRuntime =
+  process.env.CONTAINER_RUNTIME || envConfig.CONTAINER_RUNTIME;
+export const CONTAINER_RUNTIME: ContainerRuntimeType =
+  configuredRuntime === 'apple-container' || configuredRuntime === 'docker'
+    ? configuredRuntime
+    : autoDetectRuntime();
 
 // Timezone for scheduled tasks (cron expressions, etc.)
 // Uses system timezone by default

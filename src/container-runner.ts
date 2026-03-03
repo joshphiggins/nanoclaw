@@ -19,7 +19,7 @@ import { readEnvFile } from './env.js';
 import { resolveGroupFolderPath, resolveGroupIpcPath } from './group-folder.js';
 import { logger } from './logger.js';
 import {
-  CONTAINER_RUNTIME_BIN,
+  runtimeBin,
   readonlyMountArgs,
   stopContainer,
 } from './container-runtime.js';
@@ -288,7 +288,7 @@ export async function runContainerAgent(
   fs.mkdirSync(logsDir, { recursive: true });
 
   return new Promise((resolve) => {
-    const container = spawn(CONTAINER_RUNTIME_BIN, containerArgs, {
+    const container = spawn(runtimeBin(), containerArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

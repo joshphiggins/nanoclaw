@@ -11,7 +11,7 @@ import path from 'path';
 
 import Database from 'better-sqlite3';
 
-import { STORE_DIR } from '../src/config.js';
+import { CONTAINER_RUNTIME, STORE_DIR } from '../src/config.js';
 import { logger } from '../src/logger.js';
 import {
   getPlatform,
@@ -80,17 +80,21 @@ export async function run(_args: string[]): Promise<void> {
   }
   logger.info({ service }, 'Service status');
 
-  // 2. Check container runtime
+  // 2. Check container runtime (verify the configured runtime is available)
   let containerRuntime = 'none';
-  try {
-    execSync('command -v container', { stdio: 'ignore' });
-    containerRuntime = 'apple-container';
-  } catch {
+  if (CONTAINER_RUNTIME === 'apple-container') {
+    try {
+      execSync('command -v container', { stdio: 'ignore' });
+      containerRuntime = 'apple-container';
+    } catch {
+      // Configured runtime not available
+    }
+  } else {
     try {
       execSync('docker info', { stdio: 'ignore' });
       containerRuntime = 'docker';
     } catch {
-      // No runtime
+      // Docker not available
     }
   }
 
